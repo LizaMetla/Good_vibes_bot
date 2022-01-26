@@ -1,0 +1,55 @@
+version: "3"
+services:
+  goodvibes:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      - postgres
+    restart: always
+    ports:
+      - 8000:8000
+    volumes:
+      - ".:/goodVibes"
+    env_file:
+      - .env
+
+
+  celery-beat:
+    build: .
+    command: "celery -A goodVibes beat --scheduler django_celery_beat.schedulers:DatabaseScheduler -l INFO --pidfile=./celery_beat.pid"
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env
+    volumes:
+      - ".:/goodVibes"
+
+  celery-worker:
+    build: .
+    command: "celery -A goodVibes worker -l INFO --concurrency=8 --pidfile=./celery_worker.pid -E"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ".:/goodVibes"
+
+  redis:
+    image: redis
+    restart: always
+
+  postgres:
+    image: postgres
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: "trust"
+volumes:
+  pg_data:

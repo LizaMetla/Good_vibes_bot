@@ -9,9 +9,9 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-
+import os
 from pathlib import Path
-
+import environ
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,6 +27,16 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+env = environ.Env(
+    TELEGRAM_TOKEN=(str, None),
+    CELERY_ALWAYS_EAGER=(bool, False)
+)
+
+
+TELEGRAM_TOKEN = env('TELEGRAM_TOKEN')
+CELERY_ALWAYS_EAGER = env('CELERY_ALWAYS_EAGER')
+
+# TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 
 # Application definition
 
@@ -37,6 +47,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_celery_beat',
+    'django_celery_results',
+    'tbot.apps.TbotConfig'
 ]
 
 MIDDLEWARE = [
@@ -76,8 +89,11 @@ WSGI_APPLICATION = 'goodVibes.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': "postgres",
+        'HOST': 'postgres',
+        'PORT': 5432
     }
 }
 
@@ -122,3 +138,11 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+BROKER_URL = "redis://redis:6379"
+CELERY_BROKER_URL = BROKER_URL
+CELERY_RESULT_BACKEND = BROKER_URL
+CELERY_ENABLE_UTC = False
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_TASK_SERIALIZER = "json"
